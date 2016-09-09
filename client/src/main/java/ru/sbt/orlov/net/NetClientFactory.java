@@ -14,10 +14,6 @@ public class NetClientFactory {
         this.port = port;
     }
 
-    public <T> T createClient(Class<T> interfaceClass) {
-        return (T) newProxyInstance(getSystemClassLoader(), new Class[]{interfaceClass}, new ClientInvocationHandler(host, port));
-    }
-
     public static void main(String[] args) {
         testCalculatorRMI();
         testWorkerRMI();
@@ -31,12 +27,22 @@ public class NetClientFactory {
         System.out.println(client1.calculateHardThing(2.0d, LocalDate.now()));
         System.out.println(client2.calculateHardThing(3.0d, LocalDate.now()));
         System.out.println(client3.calculateHardThing(4.0d, LocalDate.now()));
+        System.out.println(client3.giveMeString());
     }
 
     private static void testCalculatorRMI() {
         NetClientFactory factory = new NetClientFactory("127.0.0.1", 5000);
         Calculator client = factory.createClient(Calculator.class);
-        double calculate = client.calculate(1, 2);
-        System.out.println(calculate);
+        System.out.println(client.calculate(1, 2));
+        try {
+            System.out.println(client.calculate(1, 2, LocalDate.now()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T createClient(Class<T> interfaceClass) {
+        return (T) newProxyInstance(getSystemClassLoader(), new Class[]{interfaceClass}, new ClientInvocationHandler(host, port));
     }
 }

@@ -1,12 +1,13 @@
 package ru.sbt.orlov.net;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
+
+import static ru.sbt.orlov.ObjectToByteUtil.objectToByteArray;
 
 public class ClientInvocationHandler implements InvocationHandler {
     private final String host;
@@ -22,7 +23,7 @@ public class ClientInvocationHandler implements InvocationHandler {
         byte[] toServerBuffer = argsToByteArray(method.getName(), args, method.getParameterTypes());
         try (Socket client = new Socket(host, port)) {
             client.getOutputStream().write(toServerBuffer);
-            return recieveAwnser(client.getInputStream());
+            return receiveAnswer(client.getInputStream());
         }
     }
 
@@ -35,22 +36,13 @@ public class ClientInvocationHandler implements InvocationHandler {
         return objectToByteArray(toServerArgs);
     }
 
-    private Object recieveAwnser(InputStream inputStream) throws Throwable {
-        try (
-                ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+    private Object receiveAnswer(InputStream inputStream) throws Throwable {
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
             Object result = objectInputStream.readObject();
             if (result instanceof Throwable) {
                 throw (Throwable) result;
             }
             return result;
-        }
-    }
-
-    private byte[] objectToByteArray(Object object) throws IOException {
-        try (ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
-             ObjectOutputStream objStream = new ObjectOutputStream(arrayOutputStream)) {
-            objStream.writeObject(object);
-            return arrayOutputStream.toByteArray();
         }
     }
 }

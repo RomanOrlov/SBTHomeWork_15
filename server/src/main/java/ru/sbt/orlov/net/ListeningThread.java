@@ -1,13 +1,15 @@
 package ru.sbt.orlov.net;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ru.sbt.orlov.ObjectToByteUtil.objectToByteArray;
 
 /**
  * @author r.orlov
@@ -16,6 +18,7 @@ public class ListeningThread extends Thread {
     private final static Logger LOGGER = Logger.getLogger(ListeningThread.class.getName());
     private final ServerSocket socket;
     private final Object impl;
+    private boolean isStopped;
 
     public ListeningThread(String threadName, InetAddress address, int port, Object impl) throws IOException {
         super(threadName);
@@ -25,7 +28,7 @@ public class ListeningThread extends Thread {
 
     @Override
     public void run() {
-        while (true) {
+        while (!isStopped) {
             try {
                 Socket accept = socket.accept();
                 ObjectInputStream inputStream = new ObjectInputStream(accept.getInputStream());
@@ -34,7 +37,7 @@ public class ListeningThread extends Thread {
                 byte[] buffer = objectToByteArray(result);
                 accept.getOutputStream().write(buffer);
             } catch (IOException | SecurityException | IllegalArgumentException | ClassNotFoundException ex) {
-                LOGGER.log(Level.SEVERE, "Exception occured in thread ", ex);
+                LOGGER.log(Level.SEVERE, "Exception occurred in thread ", ex);
             }
         }
     }
@@ -42,11 +45,8 @@ public class ListeningThread extends Thread {
     private Object invokeMethod(Object[] input) {
         String methodName = (String) input[0];
         try {
-            if (input.length == 1) {
-                return impl.getClass().getMethod(methodName).invoke(impl);
-            }
-            Object result = invokeMethodWithArgs(methodName, input);
-            return result;
+            if (input.length == 1) return impl.getClass().getMethod(methodName).invoke(impl);
+            return invokeMethodWithArgs(methodName, input);
         } catch (Exception ex) {
             // Exception from reflection method call wrapped in InvocationTargetException
             return ex.getCause() == null ? ex : ex.getCause();
@@ -61,11 +61,7 @@ public class ListeningThread extends Thread {
         return impl.getClass().getMethod(methodName, classObjects).invoke(impl, args);
     }
 
-    private byte[] objectToByteArray(Object object) throws IOException {
-        try (ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
-             ObjectOutputStream objStream = new ObjectOutputStream(arrayOutputStream)) {
-            objStream.writeObject(object);
-            return arrayOutputStream.toByteArray();
-        }
+    private void stopListening() {
+        isStopped = true;
     }
 }

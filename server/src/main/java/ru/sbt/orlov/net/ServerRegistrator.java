@@ -8,7 +8,7 @@ public class ServerRegistrator {
 
     public static void listen(String host, int port, Object impl) throws UnknownHostException, IOException {
         InetAddress hostAdress = InetAddress.getByName(host);
-        String threadName = "Thread listening "+impl.getClass().getName();
+        String threadName = "Thread listening " + impl.getClass().getName();
         new ListeningThread(threadName, hostAdress, port, impl).start();
     }
 

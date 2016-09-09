@@ -4,21 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-/*
- * Client:
- * createProxy
- *     send method name + args to server
- *    receive return value from server and return it
- * */
-
-/*
- * server:
- * listen host + port
- * read methodName + args
- * invoke method via reflection
- * send return value to client
- *
- * */
 public class ServerRegistrator {
 
     public static void listen(String host, int port, Object impl) throws UnknownHostException, IOException {
@@ -30,5 +15,6 @@ public class ServerRegistrator {
     // Регистрируем обработчики вызовов.
     public static void main(String[] args) throws IOException {
         ServerRegistrator.listen("127.0.0.1", 5000, new CalculatorImpl());
+        ServerRegistrator.listen("127.0.0.1", 6000, new WorkerImpl());
     }
 }
